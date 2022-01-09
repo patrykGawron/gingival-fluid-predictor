@@ -1,45 +1,31 @@
-import typing
+import argparse
+import pathlib
+
 import pandas as pd
 
+from processing.utils import perform_processing
 
-class GingivalFluidPredictor:
 
-    def __init__(self):
-        # TODO: Pytanie odnośnie domyślnego formatu pliku - miało być CSV ale separatorem jest tabulator
-        self.data = pd.read_csv("data/2021.12.21_project_data.csv", sep="\t")
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_file', type=str)
+    parser.add_argument('results_file', type=str)
+    args = parser.parse_args()
 
-        self.gender_map = {
-            "m": 0,
-            "k": 1
-        }
+    input_file = pathlib.Path(args.input_file)
+    results_file = pathlib.Path(args.results_file)
 
-        # drop incomplete columns
-        self.data.drop(columns=["Unnamed: 0",
-                                "Interleukina – 11B",
-                                "Interleukina – 11P",
-                                "Interleukina – 16B",
-                                "Interleukina – 16P",
-                                "Interleukina – 24B",
-                                "Interleukina – 24P",
-                                "Interleukina – 31B",
-                                "Interleukina – 31P",
-                                "Interleukina – 36B",
-                                "Interleukina – 36P",
-                                "Interleukina – 44B",
-                                "Interleukina – 44P"], axis=1, inplace=True)
+    data = pd.read_csv(input_file, sep='\t')
 
-        # change str percentage columns to floats
-        self.data["API"] = self.data["API"].apply(lambda x: float(x.replace("%", "")))
-        self.data["SBI"] = self.data["SBI"].apply(lambda x: float(x.replace("%", "")))
+    column_names = ['16-B', '16-P', '11-B', '11-P', '24-B', '24-P', '36-B', '36-P', '31-B', '31-P', '44-B', '44-P']
+    gt_data = data[column_names]
+    input_data = data.drop(columns=column_names)
 
-        # change gender data to numbers
-        self.data["plec"] = self.data["plec"].apply(lambda x: self.gender_map[x])
+    predicted_data = perform_processing(input_data)
+    print(predicted_data.head())
 
-        print(self.data["API"])
-        print(self.data["SBI"])
-        print(self.data["plec"])
-        print(self.data.info())
+    predicted_data.to_csv(results_file, sep='\t', encoding='utf-8')
 
 
 if __name__ == '__main__':
-    predictor = GingivalFluidPredictor()
+    main()
